@@ -78,7 +78,7 @@ def replace_with_blank(text, query_word=None):
     
 def show_word(query_word, i, replace_func):
     if i["word"] != query_word:
-        print replace_func(query_word), i["word"], "\t", i["part_of_speech"],i["commonness"]
+        print replace_func(query_word), replace_func(i["word"]), "\t", i["part_of_speech"],i["commonness"]
     else:
         print replace_func(i["word"]), "\t", i["part_of_speech"],i["commonness"]
     print replace_func(i["definition"], i["word"])
@@ -86,7 +86,6 @@ def show_word(query_word, i, replace_func):
     print replace_func(i["examples"], i["word"])
     
 def recall_train(query_word, entry_list):
-    print query_word
     for i in entry_list:
         cur.execute('SELECT * FROM memory WHERE hash = "%s"' %(i["hash"]))
         rt = cur.fetchone()
@@ -109,7 +108,7 @@ def recall_train(query_word, entry_list):
         cur.execute(query)
     conn.commit()
     
-def reading_train(query_word, entry_list):
+def reading_all(query_word, entry_list):
     for i in entry_list:
         cur.execute('SELECT * FROM memory WHERE hash = "%s"' %(i["hash"]))
         rt = cur.fetchone()
@@ -133,7 +132,10 @@ def spelling_train(query_word, entry_list):
     pass
 
 def main(argv):
+    with open(argv[0]) as myfile:
+        total = sum(1 for line in myfile if line.rstrip('\n'))
     f = open(argv[0])
+    count = 0
     for i in f.readlines():
         query_word = i.strip()
         entry_list = get_word(query_word)
@@ -141,13 +143,15 @@ def main(argv):
             print "Miss %s" % (query_word)
             continue
         if argv[1] == "read":
-            reading_train(query_word, entry_list)
+            reading_all(query_word, entry_list)
         elif argv[1] == "recall":
             recall_train(query_word, entry_list)            
         elif argv[1] == "spell":
             spelling_train(query_word, entry_list)
         else:
             pass
+        count = count +1
+        print "Progress: %s/%s"%(count,total)
     return 0
 
 if __name__ == '__main__':
