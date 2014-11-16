@@ -12,10 +12,10 @@ def get_word_content(word):
     request = urllib2.Request(get_uri(word), None, headers)
     try:
         response = urllib2.urlopen(request)
-        the_page = response.read()
+        page = response.read()
     except Exception as e:
-        the_page = ""
-    return the_page
+        page = ""
+    return page
 
 def remove_newline(text):
    l = []
@@ -25,9 +25,11 @@ def remove_newline(text):
 
 def request_word(word):
     word = word.strip()
+    if len(word) ==0:
+        return None, False
     page = get_word_content(word)
     if not page:
-        return None
+        return None, False
     pool = BeautifulSoup(page)
     entry = []
     word_found = False
@@ -67,8 +69,11 @@ def write_word_entries(query_word, entry, word_found):
        hash = hashlib.md5(query_word).hexdigest()
        try:
            cur.execute("INSERT INTO word (hash, word, ref_word) VALUES (%s,%s,%s)", (hash, word, ref_word) )
+       except MySQLdb.IntegrityError, e:
+           print "Dup %s" % (title)
        except MySQLdb.Error, e: 
            print "MySQL Error: %s" % str(e)
+           raise
 
     for i in entry:
         title, explanations = i
@@ -99,7 +104,9 @@ def main(argv):
         entry, word_found = request_word(i.strip())
 #        pprint(entry)
         if not entry:
+            print "No entry %s" %(i)
             continue
         write_word_entries(i, entry, word_found)
+
 if __name__ == "__main__":
     main(sys.argv[1:])
