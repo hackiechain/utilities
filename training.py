@@ -3,8 +3,8 @@
 import MySQLdb
 import sys,re
 from db import conn_db
-
-cur = conn_db().cursor() 
+conn = conn_db()
+cur = conn.cursor() 
 
 def get_word(word):
     word = word.strip()
@@ -19,6 +19,7 @@ def get_word(word):
         word_map["part_of_speech"]  = row[3]
         word_map["definition"]  = row[4]
         word_map["examples"]  = row[5]
+        word_map["commonness"]  = row[6]
         if word_map["ref_word"] != None:
             ref_list = get_word(word_map["ref_word"])
             word_list = word_list + ref_list
@@ -49,7 +50,9 @@ def add_color(word):
     
     return "\033[1;32m"+word+"\033[1;m"
     
-def replace_with_color(text, query_word):
+def replace_with_color(text, query_word=None):
+    if query_word == None:
+        query_word = text
     def matchcase(word):
         def replace(m):
             text = m.group()
@@ -64,36 +67,85 @@ def replace_with_color(text, query_word):
         return replace
     return re.sub(query_word, matchcase(query_word), text, flags=re.IGNORECASE)
     
-def reading_train(query_word, word_list):
-    for i in word_list:
+def replace_with_blank(text, query_word=None):
+    if query_word == None:
+        query_word = text
+    def matchcase(word):
+        def replace(m):
+            return len(word)*"_"
+        return replace    
+    return re.sub(query_word, matchcase(query_word), text, flags=re.IGNORECASE)
+    
+def show_word(query_word, i, replace_func):
+    if i["word"] != query_word:
+        print replace_func(query_word), i["word"], "\t", i["part_of_speech"],i["commonness"]
+    else:
+        print replace_func(i["word"]), "\t", i["part_of_speech"],i["commonness"]
+    print replace_func(i["definition"], i["word"])
+    print "-"*50
+    print replace_func(i["examples"], i["word"])
+    
+def recall_train(query_word, entry_list):
+    print query_word
+    for i in entry_list:
+        cur.execute('SELECT * FROM memory WHERE hash = "%s"' %(i["hash"]))
+        rt = cur.fetchone()
+        if rt == None:
+            continue
+        if rt[2] > 0:
+            continue
         print "="*50
-        if i["word"] != query_word:
-            print add_color(query_word), i["word"], "\t", i["part_of_speech"]
+        show_word(query_word, i, replace_with_blank)
+        while True:
+            rt = raw_input("remember? (y/n)").strip()
+            if rt in ["y","n"]:
+                break
+        if rt == "y":
+            reading_value = 1
         else:
-            print add_color(i["word"]), "\t", i["part_of_speech"]
-        print replace_with_color(i["definition"], i["word"]);
-        print "-"*50
-        print replace_with_color(i["examples"], i["word"]);
-        rt = raw_input("").strip()
-        
-            
+            print add_color(i["word"])
+            reading_value = 0
+        query = 'INSERT INTO memory (hash, reading) VALUES ("%s", %s) ON DUPLICATE KEY UPDATE reading = %s' % (i["hash"], reading_value, reading_value)
+        cur.execute(query)
+    conn.commit()
+    
+def reading_train(query_word, entry_list):
+    for i in entry_list:
+        cur.execute('SELECT * FROM memory WHERE hash = "%s"' %(i["hash"]))
+        rt = cur.fetchone()
+        if rt != None:
+            continue
+        print "="*50
+        show_word(query_word, i, replace_with_color)
+        while True:
+            rt = raw_input("new? (y/n)").strip()
+            if rt in ["y","n"]:
+                break
+        if rt == "y":
+            reading_value = 0
+        else:
+            reading_value = 1
+        query = 'INSERT INTO memory (hash, reading) VALUES ("%s", %s) ON DUPLICATE KEY UPDATE reading = %s' % (i["hash"], reading_value, reading_value)
+        cur.execute(query)
+    conn.commit()
 
-
-def spelling_train(word_list):
+def spelling_train(query_word, entry_list):
     pass
 
 def main(argv):
     f = open(argv[0])
     for i in f.readlines():
         query_word = i.strip()
-        word_list = get_word(query_word)
-        if len(word_list) == 0:
+        entry_list = get_word(query_word)
+        if len(entry_list) == 0:
             print "Miss %s" % (query_word)
             continue
         if argv[1] == "read":
-            reading_train(query_word, word_list)
+            reading_train(query_word, entry_list)
+        elif argv[1] == "recall":
+            recall_train(query_word, entry_list)            
         elif argv[1] == "spell":
-            spelling_train(word_list)
+            spelling_train(entry_list)
         else:
             pass
             
