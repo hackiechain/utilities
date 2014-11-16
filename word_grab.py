@@ -39,7 +39,6 @@ def request_word(word):
     if not entry_tag:
         return None, word_found
     for per_entry in entry_tag:
-        print per_entry
         title = per_entry.find("h2","orth").get_text().split(u"\xa0")[0].strip().strip("0123456789. ")
         if word == title.encode('ascii', 'ignore'):
             word_found = True
@@ -120,7 +119,7 @@ def main(argv):
     for i in file.readlines():
 		task_runner.add_task(WordGrabTask(i))
     
-    task_runner.stop()
+    task_runner.join()
 	
 	
 if __name__ == "__main__":
