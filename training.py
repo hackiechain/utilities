@@ -145,10 +145,9 @@ def main(argv):
         elif argv[1] == "recall":
             recall_train(query_word, entry_list)            
         elif argv[1] == "spell":
-            spelling_train(entry_list)
+            spelling_train(query_word, entry_list)
         else:
             pass
-            
     return 0
 
 if __name__ == '__main__':
