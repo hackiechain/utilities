@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import urllib2, hashlib, sys
 import MySQLdb
@@ -47,7 +48,7 @@ def request_word(word):
             part_of_speech = i.find_previous_sibling("h4","gramGrp")
             if not part_of_speech:
                 continue
-            part_of_speech = part_of_speech.find("span","pos").get_text().strip()
+            part_of_speech = part_of_speech.find("span","pos").get_text().strip().strip("0123456789. ")
             definition = i.find("span","def").get_text().strip()
             for j in i.find_all("span","orth"):
                 if j.find("q"):
@@ -83,7 +84,8 @@ def write_word_entries(query_word, entry, word_found):
             try:
                 definition = MySQLdb.escape_string(definition.encode("utf8"))
                 exmaples = MySQLdb.escape_string((u"\t".join(exmaples)).encode("utf8"))
-                query = u'INSERT INTO word (hash, word, ref_word, part_of_speech, definition, examples) VALUES ("%s","%s","%s","%s","%s","%s")' %  (hash, title, None, part_of_speech, definition.decode("utf8"), exmaples.decode("utf8"))
+                query = u'INSERT INTO word (hash, word, ref_word, part_of_speech, definition, examples) VALUES ("%s","%s","%s","%s","%s","%s")'  \
+							%  (hash, title, None, part_of_speech, definition.decode("utf8"), exmaples.decode("utf8"))
                 cur.execute(query)
             except MySQLdb.IntegrityError, e:
                 print "Dup %s" % (title)
