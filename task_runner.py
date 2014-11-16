@@ -205,7 +205,28 @@ class TestTaskRunner(unittest.TestCase):
         task_runner.add_task(TestTask("3"), 2)
         task_runner.add_task(TestTask("P"))
         task_runner.add_task(TestTask("P"))
-
         task_runner.stop()
         sleep(3)
-
+        
+def test():
+    task_runner = TaskRunner(20)
+    t = TestTask("4")
+    task_runner.add_task(t, 1)
+    t.get_result()
+    task_runner.add_task(TestTask("3"), 2)
+    task_runner.add_task(TestTask("2"), 5)
+    task_runner.add_task(TestTask("1"), 5)
+    task_runner.add_task(TestTask("4"), 1)
+    task_runner.add_task(TestTask("P"))
+    task_runner.add_task(TestTask("P"))
+    task_runner.add_task(TestTask("P"))
+    task_runner.add_task(TestTask("4"), 1)
+    task_runner.add_task(TestTask("3"), 2)
+    task_runner.add_task(TestTask("P"))
+    task_runner.add_task(TestTask("P"))
+    task_runner.start()
+    task_runner.stop()
+    sleep(3)
+        
+if __name__ == '__main__':
+    test()

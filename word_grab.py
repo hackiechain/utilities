@@ -4,6 +4,7 @@ import urllib2, hashlib, sys
 import MySQLdb
 from pprint import pprint
 from bs4 import BeautifulSoup
+from task_runner import TaskRunner, Task
 def get_uri(word):
     base_uri = 'http://www.collinsdictionary.com/dictionary/american-cobuild-learners/%s'
     return (base_uri % word)
@@ -38,7 +39,8 @@ def request_word(word):
     if not entry_tag:
         return None, word_found
     for per_entry in entry_tag:
-        title = per_entry.find("h2","orth").get_text().split(u"\xa0")[0].strip()
+        print per_entry
+        title = per_entry.find("h2","orth").get_text().split(u"\xa0")[0].strip().strip("0123456789. ")
         if word == title.encode('ascii', 'ignore'):
             word_found = True
         explanations_tags = per_entry.find_all("ol","sense_list")
@@ -100,15 +102,26 @@ def write_word_entries(query_word, entry, word_found):
     cur.close()
     db.close()
  
+class WordGrabTask(Task):
+    def run(self, obj):
+        entry, word_found = request_word(obj)
+        if not entry:
+            print "No entry %s" %(obj)
+            return False
+        write_word_entries(obj, entry, word_found)
+        print "Done",obj
+        return True
+ 
 def main(argv):
     file = open(argv[0])
+    
+    task_runner = TaskRunner(5)
+    task_runner.start()
     for i in file.readlines():
-        entry, word_found = request_word(i.strip())
-#        pprint(entry)
-        if not entry:
-            print "No entry %s" %(i)
-            continue
-        write_word_entries(i, entry, word_found)
-
+		task_runner.add_task(WordGrabTask(i))
+    
+    task_runner.stop()
+	
+	
 if __name__ == "__main__":
     main(sys.argv[1:])
