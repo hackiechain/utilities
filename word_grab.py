@@ -64,9 +64,9 @@ def request_word(word):
                 pass
             else:
                 for pron_i in semantic_tag.find_all("span","pron"):
-                    pron = pron + "/%s/ " %(pron_i.get_text().strip(u" ()  ")) 
+                    pron = pron + "/%s/ " %(pron_i.get_text().strip(u" ()  ").strip())
         else:
-            pron = "/%s/ " %(pron_tag.get_text().strip(u" ()  "))
+            pron = "/%s/ " %(pron_tag.get_text().strip(u" ()  ").strip())
         if word == title.encode('ascii', 'ignore'):
             word_found = True
         explanations_tags = per_entry.find_all("ol","sense_list")
