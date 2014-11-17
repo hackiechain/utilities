@@ -54,7 +54,19 @@ def request_word(word):
     if commonness_tag:
         commonness = commonness_tag["data-band"]
     for per_entry in entry_tag:
-        title = per_entry.find("h2","orth").get_text().split(u"\xa0")[0].strip().strip("0123456789. ")
+        title_tag = per_entry.find("h2","orth")
+        title = title_tag.get_text().split(u"\xa0")[0].strip().strip("0123456789. ")
+        pron = ""
+        pron_tag = title_tag.find("span","pron")
+        if pron_tag == None:
+            semantic_tag = per_entry.find("div","semantic")
+            if semantic_tag == None:
+                pass
+            else:
+                for pron_i in semantic_tag.find_all("span","pron"):
+                    pron = pron + "/%s/ " %(pron_i.get_text().strip(u" ()  ")) 
+        else:
+            pron = "/%s/ " %(pron_tag.get_text().strip(u" ()  "))
         if word == title.encode('ascii', 'ignore'):
             word_found = True
         explanations_tags = per_entry.find_all("ol","sense_list")
@@ -70,7 +82,7 @@ def request_word(word):
                 if j.find("q"):
                     exmaples.append(remove_newline(j.get_text()))
             explanations.append((part_of_speech, remove_newline(definition), exmaples))
-            entry.append((title,explanations,commonness))
+            entry.append((title,explanations,commonness,pron))
     return entry, word_found
 
 def is_word_exist(query_word):
@@ -100,15 +112,15 @@ def write_word_entries(query_word, entry, word_found):
            raise
 
     for i in entry:
-        title, explanations, commonness = i
+        title, explanations, commonness, pron = i
         for j in explanations:
             part_of_speech, definition, exmaples = j
             hashchar = hashlib.md5(title.encode('ascii', 'ignore') + definition.encode('ascii', 'ignore')).hexdigest()
             try:
                 definition = MySQLdb.escape_string(definition.encode("utf8"))
                 exmaples = MySQLdb.escape_string((u"\n".join(exmaples)).encode("utf8"))
-                query = u'INSERT INTO word (hash, word, part_of_speech, definition, examples, commonness) VALUES ("%s","%s","%s","%s","%s", %s)'  \
-							%  (hashchar, title, part_of_speech, definition.decode("utf8"), exmaples.decode("utf8"), commonness)
+                query = u'INSERT INTO word (hash, word, part_of_speech, definition, examples, commonness, pron) VALUES ("%s","%s","%s","%s","%s", %s, "%s")'  \
+							%  (hashchar, title, part_of_speech, definition.decode("utf8"), exmaples.decode("utf8"), commonness, pron)
                 cur.execute(query)
             except MySQLdb.IntegrityError, e:
                 #print "Dup %s" % (title)
@@ -141,7 +153,7 @@ class WordGrabTask(Task):
 def main(argv):
     f = open(argv[0])
     
-    task_runner = TaskRunner(5)
+    task_runner = TaskRunner(10)
     task_runner.start()
     for i in f.readlines():
         task_runner.add_task(WordGrabTask(i))
