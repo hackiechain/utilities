@@ -41,20 +41,26 @@ def remove_newline(text):
    return " ".join(l)
 
 def get_pron(word):
-    retry = 3
-    while True:
-        pron_page = get_word_pron(word)
-        if not pron_page:
-            if retry !=0:
-                retry = retry - 1
-                continue
+    pron = ""
+    try:
+        retry = 3
+        while True:
+            pron_page = get_word_pron(word)
+            if not pron_page:
+                if retry !=0:
+                    retry = retry - 1
+                    continue
+                else:
+                    return None, False
             else:
-                return None, False
-        else:
-            break 
-    pron_pool = BeautifulSoup(pron_page)
-    pron = pron_pool.find("span","ipapron").get_text().strip()
-    return pron
+                break 
+        pron_pool = BeautifulSoup(pron_page)
+        pron_tag = pron_pool.find("span","ipapron")
+        if pron_tag != None:
+            pron = pron_tag.get_text().strip()
+        return pron
+    except Exception, e:
+        print e
 
 def request_word(word):
     word = word.strip()
