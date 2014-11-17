@@ -20,6 +20,7 @@ def get_word(word):
         word_map["definition"]  = row[4]
         word_map["examples"]  = row[5]
         word_map["commonness"]  = row[6]
+        word_map["pron"]  = row[7]
         if word_map["ref_word"] != None:
             ref_list = get_word(word_map["ref_word"])
             word_list = word_list + ref_list
@@ -78,9 +79,9 @@ def replace_with_blank(text, query_word=None):
     
 def show_word(query_word, i, replace_func):
     if i["word"] != query_word:
-        print replace_func(query_word), replace_func(i["word"]), "\t", i["part_of_speech"],i["commonness"]
+        print replace_func(query_word), replace_func(i["word"]), "\t", replace_func(i["pron"]), i["part_of_speech"],i["commonness"]
     else:
-        print replace_func(i["word"]), "\t", i["part_of_speech"],i["commonness"]
+        print replace_func(i["word"]), "\t", replace_func(i["pron"]), i["part_of_speech"],i["commonness"]
     print replace_func(i["definition"], i["word"])
     print "-"*50
     print replace_func(i["examples"], i["word"])
@@ -102,7 +103,7 @@ def recall_train(query_word, entry_list):
         if rt == "y":
             reading_value = 1
         else:
-            print add_color(i["word"])
+            print add_color(i["word"]), i["pron"]
             reading_value = 0
         query = 'INSERT INTO memory (hash, reading) VALUES ("%s", %s) ON DUPLICATE KEY UPDATE reading = %s' % (i["hash"], reading_value, reading_value)
         cur.execute(query)

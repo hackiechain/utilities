@@ -22,11 +22,39 @@ def get_word_content(word):
         page = ""
     return page
 
+def get_word_pron(word):
+    
+    headers = { 'User-Agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36' }
+    request = urllib2.Request("http://dictionary.reference.com/browse/%s"%(word), None, headers)
+    try:
+        response = urllib2.urlopen(request)
+        page = response.read()
+    except Exception as e:
+        print e
+        page = ""
+    return page
+    
 def remove_newline(text):
    l = []
    for i in text.splitlines():
        l.append(i.strip())
    return " ".join(l)
+
+def get_pron(word):
+    retry = 3
+    while True:
+        pron_page = get_word_pron(word)
+        if not pron_page:
+            if retry !=0:
+                retry = retry - 1
+                continue
+            else:
+                return None, False
+        else:
+            break 
+    pron_pool = BeautifulSoup(pron_page)
+    pron = pron_pool.find("span","ipapron").get_text().strip()
+    return pron
 
 def request_word(word):
     word = word.strip()
@@ -43,6 +71,9 @@ def request_word(word):
                 return None, False
         else:
             break
+           
+
+            
     pool = BeautifulSoup(page)
     entry = []
     word_found = False
@@ -56,17 +87,7 @@ def request_word(word):
     for per_entry in entry_tag:
         title_tag = per_entry.find("h2","orth")
         title = title_tag.get_text().split(u"\xa0")[0].strip().strip("0123456789. ")
-        pron = ""
-        pron_tag = title_tag.find("span","pron")
-        if pron_tag == None:
-            semantic_tag = per_entry.find("div","semantic")
-            if semantic_tag == None:
-                pass
-            else:
-                for pron_i in semantic_tag.find_all("span","pron"):
-                    pron = pron + "/%s/ " %(pron_i.get_text().strip(u" ()  ").strip())
-        else:
-            pron = "/%s/ " %(pron_tag.get_text().strip(u" ()  ").strip())
+        pron = get_pron(title)
         if word == title.encode('ascii', 'ignore'):
             word_found = True
         explanations_tags = per_entry.find_all("ol","sense_list")
