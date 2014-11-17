@@ -103,7 +103,10 @@ def request_word(word):
             if not part_of_speech:
                 continue
             part_of_speech = part_of_speech.find("span","pos").get_text().strip().strip("0123456789. ")
-            definition = i.find("span","def").get_text().strip()
+            definition_tag = i.find("span","def")
+            if definition_tag == None:
+                continue
+            definition = definition_tag.get_text().strip()
             for j in i.find_all("span","orth"):
                 if j.find("q"):
                     exmaples.append(remove_newline(j.get_text()))
@@ -180,7 +183,7 @@ class WordGrabTask(Task):
 def main(argv):
     f = open(argv[0])
     
-    task_runner = TaskRunner(10)
+    task_runner = TaskRunner(5)
     task_runner.start()
     for i in f.readlines():
         task_runner.add_task(WordGrabTask(i))
