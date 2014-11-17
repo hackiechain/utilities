@@ -73,7 +73,6 @@ def request_word(word):
             break
            
 
-            
     pool = BeautifulSoup(page)
     entry = []
     word_found = False
@@ -139,6 +138,7 @@ def write_word_entries(query_word, entry, word_found):
             hashchar = hashlib.md5(title.encode('ascii', 'ignore') + definition.encode('ascii', 'ignore')).hexdigest()
             try:
                 definition = MySQLdb.escape_string(definition.encode("utf8"))
+                part_of_speech = MySQLdb.escape_string(part_of_speech)
                 exmaples = MySQLdb.escape_string((u"\n".join(exmaples)).encode("utf8"))
                 query = u'INSERT INTO word (hash, word, part_of_speech, definition, examples, commonness, pron) VALUES ("%s","%s","%s","%s","%s", %s, "%s")'  \
 							%  (hashchar, title, part_of_speech, definition.decode("utf8"), exmaples.decode("utf8"), commonness, pron)
