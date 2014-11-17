@@ -60,7 +60,7 @@ def get_pron(word):
             pron = pron_tag.get_text().strip()
         return pron
     except Exception, e:
-        print e
+        return pron
 
 def request_word(word):
     word = word.strip()
