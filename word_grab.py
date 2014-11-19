@@ -51,7 +51,7 @@ def get_pron(word):
                     retry = retry - 1
                     continue
                 else:
-                    return None, False
+                    return pron
             else:
                 break 
         pron_pool = BeautifulSoup(pron_page)
@@ -78,7 +78,6 @@ def request_word(word):
         else:
             break
            
-
     pool = BeautifulSoup(page)
     entry = []
     word_found = False
@@ -93,16 +92,16 @@ def request_word(word):
         title_tag = per_entry.find("h2","orth")
         title = title_tag.contents[0].strip()
         pron = get_pron(title)
-        explanations_tags = per_entry.find_all("ol","sense_list")
+        explanations_tags = per_entry.find_all("div","hom")
         if word == title.encode('ascii', 'ignore') and len(explanations_tags) != 0:
-            word_found = True        
+            word_found = True       
         for i in explanations_tags:
             explanations = []
             exmaples = []
-            part_of_speech = i.find_previous_sibling("h4","gramGrp")
-            if not part_of_speech:
-                continue
-            part_of_speech = part_of_speech.find("span","pos").get_text().strip().strip("0123456789. ")
+            part_of_speech = ""
+            part_of_speech_tag = i.find("h4","gramGrp")
+            if part_of_speech_tag:
+                part_of_speech = part_of_speech_tag.find("span","pos").get_text().strip().strip("0123456789. ")
             definition_tag = i.find("span","def")
             if definition_tag == None:
                 continue
