@@ -91,11 +91,11 @@ def request_word(word):
         commonness = commonness_tag["data-band"]
     for per_entry in entry_tag:
         title_tag = per_entry.find("h2","orth")
-        title = title_tag.get_text().split(u"\xa0")[0].strip().strip("0123456789. ")
+        title = title_tag.contents[0].strip()
         pron = get_pron(title)
-        if word == title.encode('ascii', 'ignore'):
-            word_found = True
         explanations_tags = per_entry.find_all("ol","sense_list")
+        if word == title.encode('ascii', 'ignore') and len(explanations_tags) != 0:
+            word_found = True        
         for i in explanations_tags:
             explanations = []
             exmaples = []
@@ -170,7 +170,7 @@ class WordGrabTask(Task):
     def run(self, obj):
         obj = obj.strip()
         if is_word_exist(obj):
-            print "Existed %s" %(obj)
+            #print "Existed %s" %(obj)
             return True        
         entry, word_found = request_word(obj)
         if not entry:

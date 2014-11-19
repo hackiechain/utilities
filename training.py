@@ -86,25 +86,31 @@ def show_word(query_word, i, replace_func):
     print "-"*50
     print replace_func(i["examples"], i["word"])
     
-def recall_train(query_word, entry_list):
+def recall_train(query_word, entry_list, recall_level):
+    recall_level = int(recall_level)
     for i in entry_list:
         cur.execute('SELECT * FROM memory WHERE hash = "%s"' %(i["hash"]))
         rt = cur.fetchone()
         if rt == None:
             continue
-        if rt[2] > 0:
+        if rt[2] != recall_level:
             continue
         print "="*50
         show_word(query_word, i, replace_with_blank)
         while True:
-            rt = raw_input("remember? (y/n)").strip()
+            rt = raw_input("remember? (y/n/r)").strip()
             if rt in ["y","n"]:
                 break
+            if rt == "r":
+                print add_color(i["word"]), i["pron"]
         if rt == "y":
-            reading_value = 1
+            reading_value = recall_level + 1
         else:
-            print add_color(i["word"]), i["pron"]
-            reading_value = 0
+            if recall_level > 0:
+                reading_value = recall_level -1
+            else:
+                reading_value = recall_level
+        print add_color(i["word"]), i["pron"]
         query = 'INSERT INTO memory (hash, reading) VALUES ("%s", %s) ON DUPLICATE KEY UPDATE reading = %s' % (i["hash"], reading_value, reading_value)
         cur.execute(query)
     conn.commit()
@@ -138,6 +144,7 @@ def main(argv):
     f = open(argv[0])
     count = 0
     for i in f.readlines():
+        count = count +1
         query_word = i.strip()
         entry_list = get_word(query_word)
         if len(entry_list) == 0:
@@ -146,15 +153,14 @@ def main(argv):
         if argv[1] == "read":
             reading_all(query_word, entry_list)
         elif argv[1] == "recall":
-            recall_train(query_word, entry_list)            
+            recall_train(query_word, entry_list, argv[2])            
         elif argv[1] == "spell":
             spelling_train(query_word, entry_list)
         else:
             pass
-        count = count +1
-        print "Progress: %s/%s"%(count,total)
+        print "Progress: %s/%s" % (count,total)
     return 0
-
+    
 if __name__ == '__main__':
 	main(sys.argv[1:])
 
