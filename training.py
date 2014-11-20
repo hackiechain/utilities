@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import MySQLdb
-import sys,re
+import sys,re,time
 from db import conn_db
 conn = conn_db()
 cur = conn.cursor() 
@@ -66,7 +66,8 @@ def replace_with_color(text, query_word=None):
             else:
                 return add_color(word)
         return replace
-    return re.sub(query_word, matchcase(query_word), text, flags=re.IGNORECASE)
+    regex = re.compile(query_word, re.I)
+    return regex.sub(matchcase(query_word), text)
     
 def replace_with_blank(text, query_word=None):
     if query_word == None:
@@ -75,7 +76,8 @@ def replace_with_blank(text, query_word=None):
         def replace(m):
             return len(word)*"_"
         return replace    
-    return re.sub(query_word, matchcase(query_word), text, flags=re.IGNORECASE)
+    regex = re.compile(query_word, re.I)
+    return regex.sub(matchcase(query_word), text)
     
 def show_word(query_word, i, replace_func):
     if i["word"] != query_word:
@@ -135,6 +137,16 @@ def reading_all(query_word, entry_list):
         cur.execute(query)
     conn.commit()
 
+def explore_all(query_word, entry_list):
+    for i in entry_list:
+        cur.execute('SELECT * FROM memory WHERE hash = "%s"' %(i["hash"]))
+        rt = cur.fetchone()
+        if rt != None:
+            continue
+        print "="*50
+        show_word(query_word, i, replace_with_color)
+        time.sleep(3)
+
 def spelling_train(query_word, entry_list):
     pass
 
@@ -152,6 +164,8 @@ def main(argv):
             continue
         if argv[1] == "read":
             reading_all(query_word, entry_list)
+        elif argv[1] == "explore":
+            explore_all(query_word, entry_list)      
         elif argv[1] == "recall":
             recall_train(query_word, entry_list, argv[2])            
         elif argv[1] == "spell":
